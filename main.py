@@ -16,6 +16,12 @@ class GUI(ctk.CTk):
         self.title("📁 File Organizer")
         self.resizable(False, False)
         
+        # Agregar icono a la ventana
+        try:
+            self.iconbitmap('icon.ico')
+        except:
+            pass  # Si no existe el archivo, continúa sin icono
+        
         # Configurar la ventana
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
