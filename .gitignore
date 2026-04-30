@@ -4,6 +4,7 @@ dist/
 __pycache__/
 *.pyc
 *.pyo
+.sixth/
 
 # Virtual environments
 .venv/
@@ -22,3 +23,6 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.log
+
+# Local release helpers
+crear_release*.py
