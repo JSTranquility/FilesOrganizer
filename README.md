@@ -1,28 +1,22 @@
-# 📁 File Organizer
+# File Organizer
 
-Una aplicación moderna para organizar archivos automáticamente por tipo.
+Aplicacion de escritorio para organizar archivos automaticamente por tipo.
 
-## ✨ Características
+## Descarga
 
-- 🎯 Interfaz gráfica intuitiva
-- 📂 Organiza archivos automáticamente por extensión
-- 🔄 Prevención de conflictos (renombra automáticamente si existen duplicados)
-- 🎨 Tema oscuro moderno con colores personalizados
-- ⚡ Operación en segundo plano (sin congelar la UI)
-- 📦 Empaquetado como un único ejecutable
+Descarga la version lista para usar desde GitHub Releases:
 
-## 🚀 Descarga Rápida
+[File Organizer v1.0.0](https://github.com/JSTranquility/FilesOrganizer/releases/tag/v1.0.0)
 
-### Opción 1: Descargar Ejecutable (Recomendado)
-[Descargar File Organizer.exe v1.0.0](https://github.com/JSTranquility/FilesOrganizer/releases/tag/v1.0.0)
+## Ejecutar desde codigo fuente
 
-### Opción 2: Ejecutar desde Código Fuente
+Requisitos:
 
-**Requisitos:**
 - Python 3.6+
 - pip
 
-**Instalación:**
+Instalacion:
+
 ```bash
 git clone https://github.com/JSTranquility/FilesOrganizer.git
 cd FilesOrganizer
@@ -30,79 +24,29 @@ pip install -r requirements.txt
 python main.py
 ```
 
-## 📖 Cómo Usar
+## Uso
 
-1. **Ejecuta la aplicación** - `File Organizer.exe` o `python main.py`
-2. **Selecciona una carpeta** - Click en "📁 Seleccionar Carpeta"
-3. **Organiza los archivos** - Click en "✨ Organizar Archivos"
-4. **¡Listo!** - Los archivos se organizarán automáticamente
+1. Ejecuta `File Organizer.exe` o `python main.py`.
+2. Selecciona una carpeta.
+3. Haz clic en `Organizar Archivos`.
+4. Los archivos se moveran a carpetas segun su tipo.
 
-## 📋 Extensiones Soportadas
+## Extensiones soportadas
 
 | Tipo | Extensiones |
-|------|-------------|
-| Imágenes | PNG, JPG, JPEG |
+| --- | --- |
+| Imagenes | PNG, JPG, JPEG |
 | Documentos | TXT, PDF, DOCX, XLSX |
 | Ejecutables | EXE |
 | Multimedia | MP3, MP4 |
-| Otros | Todos los demás archivos |
+| Otros | Cualquier otra extension |
 
-## 🛠️ Compilación desde Código Fuente
+## Archivos del proyecto
 
-Si deseas compilar tu propio `.exe` con icono personalizado:
+- `main.py` - Aplicacion principal.
+- `requirements.txt` - Dependencias para ejecutar desde codigo fuente.
+- `icon.ico` - Icono usado por la ventana de la aplicacion.
 
-```bash
-# Instalar dependencias
-pip install pyinstaller pillow customtkinter
+## Version
 
-# Convertir imagen a icono (opcional)
-python create_icon.py
-
-# Compilar
-python compilar.py
-```
-
-El ejecutable estará en la carpeta `dist/`
-
-## 📦 Requisitos
-
-- **Python 3.6+** (solo si ejecutas desde código fuente)
-- **customtkinter** - Interfaz gráfica moderna
-- **pyinstaller** - Para compilar el ejecutable
-
-## 📄 Archivos Incluidos
-
-- `main.py` - Código principal de la aplicación
-- `compilar.py` - Script para compilar a .exe
-- `create_icon.py` - Script para convertir imágenes a icono
-- `build.bat` - Script de compilación para Windows
-- `icon.ico` - Icono de la aplicación
-- `INSTRUCCIONES_ICONO.md` - Guía detallada para cambiar el icono
-
-## 🐛 Troubleshooting
-
-### "La carpeta está vacía"
-Asegúrate de que selecciones una carpeta que contenga archivos.
-
-### El ejecutable se ve como archivo desconocido
-Esto es normal en la primera ejecución. Windows verifica el archivo automáticamente.
-
-### Antivirus reporta falso positivo
-El archivo `.exe` es seguro. Si lo deseas, puedes compilarlo tú mismo desde el código fuente.
-
-## 📝 Licencia
-
-MIT - Ver `LICENSE` para más detalles
-
-## 👨‍💻 Contribuciones
-
-¡Las contribuciones son bienvenidas! Para cambios mayores, abre un issue primero para discutir qué cambios te gustaría hacer.
-
-## 📧 Contacto
-
-Para reportar bugs o sugerencias, abre un [issue](https://github.com/JSTranquility/FilesOrganizer/issues)
-
----
-
-**Versión:** 1.0.0  
-**Última actualización:** 2026-04-30
+1.0.0
