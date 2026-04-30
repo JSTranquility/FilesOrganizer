@@ -1,21 +1,32 @@
 # File Organizer
 
-Aplicacion de escritorio para organizar archivos automaticamente por tipo.
+Desktop app for organizing files by type with a safe preview-first workflow.
 
-## Descarga
+## Download
 
-Descarga la version lista para usar desde GitHub Releases:
+Download the portable release from GitHub Releases:
 
-[File Organizer v1.0.0](https://github.com/JSTranquility/FilesOrganizer/releases/tag/v1.0.0)
+[File Organizer v1.1.0](https://github.com/JSTranquility/FilesOrganizer/releases/tag/v1.1.0)
 
-## Ejecutar desde codigo fuente
+Extract the ZIP and run `File Organizer.exe`.
 
-Requisitos:
+## Features
 
-- Python 3.6+
+- Preview planned moves before changing files.
+- Organize files into editable categories.
+- Ignore specific extensions or filenames.
+- Avoid overwriting files by automatically renaming duplicates.
+- Undo the last organization from the app.
+- View a summary of moved files by category.
+
+## Run From Source
+
+Requirements:
+
+- Python 3.10+
 - pip
 
-Instalacion:
+Installation:
 
 ```bash
 git clone https://github.com/JSTranquility/FilesOrganizer.git
@@ -24,29 +35,33 @@ pip install -r requirements.txt
 python main.py
 ```
 
-## Uso
+## Usage
 
-1. Ejecuta `File Organizer.exe` o `python main.py`.
-2. Selecciona una carpeta.
-3. Haz clic en `Organizar Archivos`.
-4. Los archivos se moveran a carpetas segun su tipo.
+1. Open the app.
+2. Select a folder.
+3. Adjust categories or exclusions if needed.
+4. Click `Preview`.
+5. Click `Organize` when the preview looks right.
+6. Use `Undo Last Move` if you want to restore the previous organization.
 
-## Extensiones soportadas
+## Default Categories
 
-| Tipo | Extensiones |
+| Category | Extensions |
 | --- | --- |
-| Imagenes | PNG, JPG, JPEG |
-| Documentos | TXT, PDF, DOCX, XLSX |
-| Ejecutables | EXE |
-| Multimedia | MP3, MP4 |
-| Otros | Cualquier otra extension |
+| Images | PNG, JPG, JPEG, GIF, WEBP, BMP, SVG |
+| Documents | TXT, PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX |
+| Audio | MP3, WAV, OGG, FLAC, M4A |
+| Video | MP4, MOV, AVI, MKV, WEBM |
+| Archives | ZIP, RAR, 7Z, TAR, GZ |
+| Executables | EXE, MSI, BAT, CMD |
+| Other | Any extension not matched above |
 
-## Archivos del proyecto
+## Project Files
 
-- `main.py` - Aplicacion principal.
-- `requirements.txt` - Dependencias para ejecutar desde codigo fuente.
-- `icon.ico` - Icono usado por la ventana de la aplicacion.
+- `main.py` - Main application.
+- `requirements.txt` - Runtime dependencies.
+- `icon.ico` - Window icon.
 
 ## Version
 
-1.0.0
+1.1.0
