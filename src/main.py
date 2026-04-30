@@ -1,5 +1,6 @@
 import os
 import shutil
+import sys
 import threading
 from collections import Counter
 from dataclasses import dataclass
@@ -10,6 +11,15 @@ import customtkinter as ctk
 
 
 APP_VERSION = "1.1.0"
+BASE_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = BASE_DIR.parent
+
+if getattr(sys, "frozen", False):
+    RESOURCE_ROOT = Path(getattr(sys, "_MEIPASS", Path(sys.executable).parent))
+else:
+    RESOURCE_ROOT = PROJECT_ROOT
+
+ICON_PATH = RESOURCE_ROOT / "assets" / "icon.ico"
 
 DEFAULT_CATEGORIES = {
     "Images": ".png, .jpg, .jpeg, .gif, .webp, .bmp, .svg",
@@ -41,7 +51,7 @@ class FileOrganizerApp(ctk.CTk):
         self.minsize(820, 640)
 
         try:
-            self.iconbitmap("icon.ico")
+            self.iconbitmap(str(ICON_PATH))
         except Exception:
             pass
 

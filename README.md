@@ -32,7 +32,7 @@ Installation:
 git clone https://github.com/JSTranquility/FilesOrganizer.git
 cd FilesOrganizer
 pip install -r requirements.txt
-python main.py
+python src/main.py
 ```
 
 ## Usage
@@ -58,9 +58,27 @@ python main.py
 
 ## Project Files
 
-- `main.py` - Main application.
+- `src/main.py` - Main application.
+- `assets/icon.ico` - Window icon.
+- `scripts/build_portable.ps1` - Builds the portable ZIP release.
 - `requirements.txt` - Runtime dependencies.
-- `icon.ico` - Window icon.
+
+## Build Portable ZIP
+
+Install build dependencies, then run:
+
+```powershell
+pip install -r requirements-build.txt
+.\scripts\build_portable.ps1 -Version 1.1.0
+```
+
+If you want to build with a specific Python installation:
+
+```powershell
+.\scripts\build_portable.ps1 -Version 1.1.0 -PythonPath "C:\Path\To\python.exe"
+```
+
+The portable ZIP will be created in `dist/`.
 
 ## Version
 

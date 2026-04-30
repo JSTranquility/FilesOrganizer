@@ -26,6 +26,7 @@ Thumbs.db
 *.tmp
 *.log
 python-*.exe
+*.zip
 
 # Local release helpers
 crear_release*.py
