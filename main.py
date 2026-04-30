@@ -113,6 +113,7 @@ class FileOrganizerApp(ctk.CTk):
         options = ctk.CTkFrame(root, corner_radius=16, fg_color="#11181C")
         options.grid(row=3, column=0, sticky="nsew", padx=(18, 9), pady=(0, 12))
         options.grid_columnconfigure(0, weight=1)
+        options.grid_columnconfigure(1, weight=1)
 
         ctk.CTkLabel(
             options,
@@ -122,13 +123,14 @@ class FileOrganizerApp(ctk.CTk):
         ).grid(row=0, column=0, sticky="w", padx=14, pady=(14, 8))
 
         for index, (category, extensions) in enumerate(DEFAULT_CATEGORIES.items()):
-            row = (index * 2) + 1
+            column = index % 2
+            row = (index // 2) * 2 + 1
             ctk.CTkLabel(options, text=category, text_color="#DCE9ED").grid(
-                row=row, column=0, sticky="w", padx=14, pady=(6, 0)
+                row=row, column=column, sticky="w", padx=14, pady=(6, 0)
             )
             entry = ctk.CTkEntry(options)
             entry.insert(0, extensions)
-            entry.grid(row=row + 1, column=0, sticky="ew", padx=14, pady=(2, 4))
+            entry.grid(row=row + 1, column=column, sticky="ew", padx=14, pady=(2, 4))
             self.category_entries[category] = entry
 
         exclusions = ctk.CTkFrame(root, corner_radius=16, fg_color="#11181C")
@@ -181,6 +183,8 @@ class FileOrganizerApp(ctk.CTk):
         output.grid(row=4, column=0, columnspan=2, sticky="nsew", padx=18, pady=(0, 18))
         output.grid_columnconfigure(0, weight=1)
         output.grid_rowconfigure(1, weight=1)
+        output.configure(height=260)
+        output.grid_propagate(False)
 
         ctk.CTkLabel(
             output,
