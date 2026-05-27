@@ -68,8 +68,8 @@ Each category can be assigned a custom destination folder by clicking `...` next
 - `src/file_utils.py` - File planning, matching and destination helpers.
 - `src/config.py` - App constants, categories and folder aliases.
 - `src/models.py` - Shared data models.
-- `assets/app_logo.ico` - Window and taskbar icon.
-- `assets/logo.png` - Logo displayed in the app footer.
+- `assets/app_logo.ico` - Application icon.
+- `assets/logo.png` - Header image.
 - `scripts/build_portable.ps1` - Builds the portable ZIP release.
 - `requirements.txt` - Runtime dependencies.
 
