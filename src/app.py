@@ -1,6 +1,4 @@
-import os
 import shutil
-import tempfile
 import threading
 from collections import Counter
 from pathlib import Path
@@ -9,7 +7,14 @@ from tkinter import filedialog, messagebox
 import customtkinter as ctk
 from PIL import Image
 
-from config import APP_VERSION, DEFAULT_CATEGORIES, ICON_PATH, LOGO_PATH
+from config import APP_VERSION, DEFAULT_CATEGORIES, APP_ICO, LOGO_PATH
+
+try:
+    import ctypes
+    _user32 = ctypes.windll.user32
+    _has_ctypes = True
+except Exception:
+    _has_ctypes = False
 from models import PlannedMove
 
 
@@ -51,18 +56,20 @@ class FileOrganizerApp(ctk.CTk):
         self.minsize(900, 640)
 
         self._logo_img = None
-        self._ico_file = None
         try:
             if LOGO_PATH and LOGO_PATH.exists():
                 img = Image.open(LOGO_PATH)
-                ico = img.copy()
-                ico.thumbnail((64, 64))
-                ico = ico.convert("RGBA")
-                tmp = tempfile.NamedTemporaryFile(suffix=".ico", delete=False)
-                ico.save(tmp, format="ICO", sizes=[(64, 64)])
-                self._ico_file = tmp.name
-                self.iconbitmap(self._ico_file)
                 self._logo_img = ctk.CTkImage(img.copy(), size=(18, 18))
+            if APP_ICO and APP_ICO.exists() and _has_ctypes:
+                ico = str(APP_ICO.resolve())
+                self.iconbitmap(default=ico)
+                hwnd = _user32.GetParent(self.winfo_id())
+                hicon = _user32.LoadImageW(
+                    0, ico, 1, 0, 0, 0x00000010 | 0x00008000
+                )
+                if hicon:
+                    _user32.SendMessageW(hwnd, 0x0080, 0, hicon)
+                    _user32.SendMessageW(hwnd, 0x0080, 1, hicon)
         except Exception:
             pass
 
@@ -461,11 +468,6 @@ class FileOrganizerApp(ctk.CTk):
         self.after(8, self._fps_loop)
 
     def destroy(self):
-        if self._ico_file:
-            try:
-                os.unlink(self._ico_file)
-            except Exception:
-                pass
         super().destroy()
 
     def _ok(self) -> bool:
