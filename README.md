@@ -6,12 +6,13 @@ Desktop app for organizing files by type with a safe preview-first workflow.
 
 Download the portable release from GitHub Releases:
 
-[File Organizer v1.2.0](https://github.com/JSTranquility/FilesOrganizer/releases/tag/v1.2.0)
+[File Organizer v1.2.1](https://github.com/JSTranquility/FilesOrganizer/releases/tag/v1.2.1)
 
 Extract the ZIP and run `File Organizer.exe`.
 
 ## Features
 
+- Category folders auto-create when they don't exist (e.g. `Images/`, `Documents/`).
 - Custom destination folders per category (pick any folder for each file type).
 - Preview planned moves before changing files.
 - Organize files into editable categories.
@@ -79,17 +80,17 @@ Install build dependencies, then run:
 
 ```powershell
 pip install -r requirements-build.txt
-.\scripts\build_portable.ps1 -Version 1.2.0
+.\scripts\build_portable.ps1 -Version 1.2.1
 ```
 
 If you want to build with a specific Python installation:
 
 ```powershell
-.\scripts\build_portable.ps1 -Version 1.2.0 -PythonPath "C:\Path\To\python.exe"
+.\scripts\build_portable.ps1 -Version 1.2.1 -PythonPath "C:\Path\To\python.exe"
 ```
 
 The portable ZIP will be created in `dist/`.
 
 ## Version
 
-1.2.0
+1.2.1
