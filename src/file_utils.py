@@ -13,6 +13,7 @@ def build_plan(
     ignored_extensions: set[str],
     ignored_names: set[str],
     skip_hidden: bool,
+    custom_destinations: dict[str, Path] | None = None,
 ) -> list[PlannedMove]:
     category_folders = category_folder_map(selected_folder)
     plan: list[PlannedMove] = []
@@ -28,7 +29,12 @@ def build_plan(
             continue
 
         category = extension_map.get(item.suffix.lower(), "Other")
-        destination_folder = category_folders.get(category, selected_folder / category)
+
+        if custom_destinations and category in custom_destinations:
+            destination_folder = custom_destinations[category]
+        else:
+            destination_folder = category_folders.get(category, selected_folder / category)
+
         destination = unique_destination(destination_folder / item.name, item)
         if destination.resolve() == item.resolve():
             continue

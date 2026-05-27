@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 
 
-APP_VERSION = "1.1.0"
+APP_VERSION = "1.2.0"
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = BASE_DIR.parent
 
@@ -12,6 +12,7 @@ else:
     RESOURCE_ROOT = PROJECT_ROOT
 
 ICON_PATH = RESOURCE_ROOT / "assets" / "icon.ico"
+LOGO_PATH = next((RESOURCE_ROOT / "assets" / f for f in (RESOURCE_ROOT / "assets").iterdir() if f.suffix.lower() == ".png"), None)
 
 DEFAULT_CATEGORIES = {
     "Images": ".png, .jpg, .jpeg, .gif, .webp, .bmp, .svg",
