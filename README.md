@@ -58,7 +58,11 @@ python src/main.py
 
 ## Project Files
 
-- `src/main.py` - Main application.
+- `src/main.py` - Application entry point.
+- `src/app.py` - Desktop UI and workflow.
+- `src/file_utils.py` - File planning, matching and destination helpers.
+- `src/config.py` - App constants, categories and folder aliases.
+- `src/models.py` - Shared data models.
 - `assets/icon.ico` - Window icon.
 - `scripts/build_portable.ps1` - Builds the portable ZIP release.
 - `requirements.txt` - Runtime dependencies.
