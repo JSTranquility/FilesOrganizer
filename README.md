@@ -6,18 +6,21 @@ Desktop app for organizing files by type with a safe preview-first workflow.
 
 Download the portable release from GitHub Releases:
 
-[File Organizer v1.1.0](https://github.com/JSTranquility/FilesOrganizer/releases/tag/v1.1.0)
+[File Organizer v1.2.0](https://github.com/JSTranquility/FilesOrganizer/releases/tag/v1.2.0)
 
 Extract the ZIP and run `File Organizer.exe`.
 
 ## Features
 
+- Custom destination folders per category (pick any folder for each file type).
 - Preview planned moves before changing files.
 - Organize files into editable categories.
 - Ignore specific extensions or filenames.
 - Avoid overwriting files by automatically renaming duplicates.
 - Undo the last organization from the app.
 - View a summary of moved files by category.
+- 120 FPS smooth UI rendering.
+- Modern dark UI with glassmorphism aesthetic.
 
 ## Run From Source
 
@@ -39,10 +42,10 @@ python src/main.py
 
 1. Open the app.
 2. Select a folder.
-3. Adjust categories or exclusions if needed.
+3. Adjust categories, exclusions or custom destination folders if needed.
 4. Click `Preview`.
 5. Click `Organize` when the preview looks right.
-6. Use `Undo Last Move` if you want to restore the previous organization.
+6. Use `Undo` if you want to restore the previous organization.
 
 ## Default Categories
 
@@ -56,10 +59,17 @@ python src/main.py
 | Executables | EXE, MSI, BAT, CMD |
 | Other | Any extension not matched above |
 
+Each category can be assigned a custom destination folder by clicking `...` next to it. Files will be moved there instead of a subfolder inside the source.
+
 ## Project Files
 
-- `src/main.py` - Main application.
-- `assets/icon.ico` - Window icon.
+- `src/main.py` - Application entry point.
+- `src/app.py` - Desktop UI and workflow.
+- `src/file_utils.py` - File planning, matching and destination helpers.
+- `src/config.py` - App constants, categories and folder aliases.
+- `src/models.py` - Shared data models.
+- `assets/app_logo.ico` - Window and taskbar icon.
+- `assets/logo.png` - Logo displayed in the app footer.
 - `scripts/build_portable.ps1` - Builds the portable ZIP release.
 - `requirements.txt` - Runtime dependencies.
 
@@ -69,17 +79,17 @@ Install build dependencies, then run:
 
 ```powershell
 pip install -r requirements-build.txt
-.\scripts\build_portable.ps1 -Version 1.1.0
+.\scripts\build_portable.ps1 -Version 1.2.0
 ```
 
 If you want to build with a specific Python installation:
 
 ```powershell
-.\scripts\build_portable.ps1 -Version 1.1.0 -PythonPath "C:\Path\To\python.exe"
+.\scripts\build_portable.ps1 -Version 1.2.0 -PythonPath "C:\Path\To\python.exe"
 ```
 
 The portable ZIP will be created in `dist/`.
 
 ## Version
 
-1.1.0
+1.2.0
