@@ -6,7 +6,7 @@ Desktop app for organizing files by type with a safe preview-first workflow.
 
 Download the portable release from GitHub Releases:
 
-[File Organizer v1.1.0](https://github.com/JSTranquility/FilesOrganizer/releases/tag/v1.1.0)
+[File Organizer v1.2.2](https://github.com/JSTranquility/FilesOrganizer/releases/tag/v1.2.2)
 
 Extract the ZIP and run `File Organizer.exe`.
 
@@ -14,6 +14,7 @@ Extract the ZIP and run `File Organizer.exe`.
 
 - Preview planned moves before changing files.
 - Organize files into editable categories.
+- Documents are automatically sorted into subfolders (PDF, Word, Excel, PowerPoint, Text).
 - Ignore specific extensions or filenames.
 - Avoid overwriting files by automatically renaming duplicates.
 - Undo the last organization from the app.
@@ -50,6 +51,7 @@ python src/main.py
 | --- | --- |
 | Images | PNG, JPG, JPEG, GIF, WEBP, BMP, SVG |
 | Documents | TXT, PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX |
+| **Document subfolders** | TXT→Text, PDF→PDF, DOC/DOCX→Word, XLS/XLSX→Excel, PPT/PPTX→PowerPoint |
 | Audio | MP3, WAV, OGG, FLAC, M4A |
 | Video | MP4, MOV, AVI, MKV, WEBM |
 | Archives | ZIP, RAR, 7Z, TAR, GZ |
@@ -73,17 +75,16 @@ Install build dependencies, then run:
 
 ```powershell
 pip install -r requirements-build.txt
-.\scripts\build_portable.ps1 -Version 1.1.0
-```
+.\scripts\build_portable.ps1 -Version 1.2.2
 
 If you want to build with a specific Python installation:
 
 ```powershell
-.\scripts\build_portable.ps1 -Version 1.1.0 -PythonPath "C:\Path\To\python.exe"
+.\scripts\build_portable.ps1 -Version 1.2.2 -PythonPath "C:\Path\To\python.exe"
 ```
 
 The portable ZIP will be created in `dist/`.
 
 ## Version
 
-1.1.0
+1.2.2

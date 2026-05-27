@@ -160,7 +160,7 @@ class FileOrganizerApp(ctk.CTk):
         scroll.grid(row=1, column=0, sticky="nsew", padx=6, pady=(0, 2))
         scroll.grid_columnconfigure(0, weight=1)
 
-        icons = ["\U0001f5bc", "\U0001f4c4", "\U0001f3b5", "\U0001f3ac", "\U0001f4e6", "\u2699"]
+        icons = ["\U0001f5bc", "\U0001f4c4", "\U0001f3b5", "\U0001f3ac", "\U0001f4e6", "\u2699", "\U0001f4c2"]
         for i, (cat, exts) in enumerate(DEFAULT_CATEGORIES.items()):
             self._cat_row(scroll, i, icons[i], cat, exts)
 

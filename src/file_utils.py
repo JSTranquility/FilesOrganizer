@@ -3,7 +3,7 @@ import unicodedata
 from collections import Counter
 from pathlib import Path
 
-from config import CATEGORY_FOLDER_ALIASES
+from config import CATEGORY_FOLDER_ALIASES, SUBFOLDER_EXTENSIONS
 from models import PlannedMove
 
 
@@ -34,6 +34,11 @@ def build_plan(
             destination_folder = custom_destinations[category]
         else:
             destination_folder = category_folders[category]
+
+        subfolder = SUBFOLDER_EXTENSIONS.get(item.suffix.lower())
+        if subfolder:
+            destination_folder = destination_folder / subfolder
+            category = subfolder
 
         destination = unique_destination(destination_folder / item.name, item)
         if destination.resolve() == item.resolve():

@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 
 
-APP_VERSION = "1.2.1"
+APP_VERSION = "1.2.2"
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = BASE_DIR.parent
 
@@ -21,6 +21,18 @@ DEFAULT_CATEGORIES = {
     "Video": ".mp4, .mov, .avi, .mkv, .webm",
     "Archives": ".zip, .rar, .7z, .tar, .gz",
     "Executables": ".exe, .msi, .bat, .cmd",
+    "Other": "",
+}
+
+SUBFOLDER_EXTENSIONS = {
+    ".pdf": "PDF",
+    ".doc": "Word",
+    ".docx": "Word",
+    ".xls": "Excel",
+    ".xlsx": "Excel",
+    ".ppt": "PowerPoint",
+    ".pptx": "PowerPoint",
+    ".txt": "Text",
 }
 
 CATEGORY_FOLDER_ALIASES = {
