@@ -11,8 +11,8 @@ if getattr(sys, "frozen", False):
 else:
     RESOURCE_ROOT = PROJECT_ROOT
 
-ICON_PATH = RESOURCE_ROOT / "assets" / "icon.ico"
-LOGO_PATH = next((RESOURCE_ROOT / "assets" / f for f in (RESOURCE_ROOT / "assets").iterdir() if f.suffix.lower() == ".png"), None)
+APP_ICO = RESOURCE_ROOT / "assets" / "app_logo.ico"
+LOGO_PATH = RESOURCE_ROOT / "assets" / "logo.png"
 
 DEFAULT_CATEGORIES = {
     "Images": ".png, .jpg, .jpeg, .gif, .webp, .bmp, .svg",
