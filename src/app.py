@@ -15,6 +15,13 @@ try:
     _has_ctypes = True
 except Exception:
     _has_ctypes = False
+from file_utils import (
+    build_extension_map,
+    build_plan,
+    parse_extensions,
+    summarize_plan,
+    unique_destination,
+)
 from models import PlannedMove
 
 
@@ -414,9 +421,17 @@ class FileOrganizerApp(ctk.CTk):
 
     def _run(self, plan):
         ok, err = [], []
+        folders = {m.destination.parent for m in plan}
+        for f in folders:
+            try:
+                f.mkdir(parents=True, exist_ok=True)
+            except OSError as e:
+                err.append(f"Cannot create {f.name}: {e}")
+        if err:
+            self.after(0, self._done, ok, err)
+            return
         for m in plan:
             try:
-                m.destination.parent.mkdir(exist_ok=True)
                 shutil.move(str(m.source), str(m.destination))
                 ok.append((m.source, m.destination))
             except OSError as e:

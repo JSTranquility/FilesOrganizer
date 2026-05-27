@@ -33,7 +33,7 @@ def build_plan(
         if custom_destinations and category in custom_destinations:
             destination_folder = custom_destinations[category]
         else:
-            destination_folder = category_folders.get(category, selected_folder / category)
+            destination_folder = category_folders[category]
 
         destination = unique_destination(destination_folder / item.name, item)
         if destination.resolve() == item.resolve():
@@ -59,14 +59,17 @@ def category_folder_map(selected_folder: Path) -> dict[str, Path]:
         if path.is_dir()
     }
 
-    categories = [*CATEGORY_FOLDER_ALIASES]
     category_folders: dict[str, Path] = {}
-    for category in categories:
-        for alias in CATEGORY_FOLDER_ALIASES.get(category, (category,)):
+    for category, aliases in CATEGORY_FOLDER_ALIASES.items():
+        found = False
+        for alias in aliases:
             folder = existing_folders.get(normalize_folder_name(alias))
             if folder is not None:
                 category_folders[category] = folder
+                found = True
                 break
+        if not found:
+            category_folders[category] = selected_folder / category
     return category_folders
 
 
