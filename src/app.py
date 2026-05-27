@@ -5,375 +5,503 @@ from pathlib import Path
 from tkinter import filedialog, messagebox
 
 import customtkinter as ctk
+from PIL import Image
 
-from config import APP_VERSION, DEFAULT_CATEGORIES, ICON_PATH
-from file_utils import build_extension_map, build_plan, parse_extensions, summarize_plan, unique_destination
+from config import APP_VERSION, DEFAULT_CATEGORIES, APP_ICO, LOGO_PATH
+
+try:
+    import ctypes
+    _user32 = ctypes.windll.user32
+    _has_ctypes = True
+except Exception:
+    _has_ctypes = False
+from file_utils import (
+    build_extension_map,
+    build_plan,
+    parse_extensions,
+    summarize_plan,
+    unique_destination,
+)
 from models import PlannedMove
 
+
+class Clr:
+    bg = "#0a0f1a"
+    surface = "#121b2e"
+    surface2 = "#1a2740"
+    input_bg = "#0c1425"
+    blue = "#3b82f6"
+    cyan = "#06b6d4"
+    green = "#22c55e"
+    purple = "#8b5cf6"
+    orange = "#f59e0b"
+    rose = "#ef4444"
+    text = "#e2e8f0"
+    text2 = "#94a3b8"
+    text3 = "#556580"
+    border = "#1e293b"
+
+
+F = "Segoe UI"
+FM = "Consolas"
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
 
 
+def _dim(c: str, f: float = 0.7) -> str:
+    v = c.lstrip("#")
+    r, g, b = (int(v[i:i+2], 16) for i in (0, 2, 4))
+    return f"#{int(r*f):02x}{int(g*f):02x}{int(b*f):02x}"
+
+
 class FileOrganizerApp(ctk.CTk):
     def __init__(self):
         super().__init__()
-
         self.title(f"File Organizer {APP_VERSION}")
-        self.geometry("920x720")
-        self.minsize(820, 640)
+        self.geometry("1060x720")
+        self.minsize(900, 640)
 
+        self._logo_img = None
         try:
-            self.iconbitmap(str(ICON_PATH))
+            if LOGO_PATH and LOGO_PATH.exists():
+                img = Image.open(LOGO_PATH)
+                self._logo_img = ctk.CTkImage(img.copy(), size=(18, 18))
+            if APP_ICO and APP_ICO.exists() and _has_ctypes:
+                ico = str(APP_ICO.resolve())
+                self.iconbitmap(default=ico)
+                hwnd = _user32.GetParent(self.winfo_id())
+                hicon = _user32.LoadImageW(
+                    0, ico, 1, 0, 0, 0x00000010 | 0x00008000
+                )
+                if hicon:
+                    _user32.SendMessageW(hwnd, 0x0080, 0, hicon)
+                    _user32.SendMessageW(hwnd, 0x0080, 1, hicon)
         except Exception:
             pass
 
-        self.selected_folder: Path | None = None
-        self.preview_plan: list[PlannedMove] = []
-        self.last_moves: list[tuple[Path, Path]] = []
-        self.category_entries: dict[str, ctk.CTkEntry] = {}
+        self.sel: Path | None = None
+        self.plan: list[PlannedMove] = []
+        self.last: list[tuple[Path, Path]] = []
+        self.ext_entries: dict[str, ctk.CTkEntry] = {}
+        self.dst_entries: dict[str, ctk.CTkEntry] = {}
+        self.dst_paths: dict[str, Path | None] = {c: None for c in DEFAULT_CATEGORIES}
 
-        self._build_ui()
-        self._set_status("Select a folder to begin.")
+        self._ui()
+        self._st("Ready")
+        self._fps_loop()
 
-    def _build_ui(self):
+
+    # ── UI ──────────────────────────────────────────────────────────────────
+
+    def _ui(self):
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
 
-        root = ctk.CTkFrame(self, corner_radius=22)
-        root.grid(row=0, column=0, sticky="nsew", padx=18, pady=18)
-        root.grid_columnconfigure(0, weight=1)
-        root.grid_columnconfigure(1, weight=1)
-        root.grid_rowconfigure(4, weight=1)
+        w = ctk.CTkFrame(self, fg_color=Clr.bg, corner_radius=0)
+        w.grid(row=0, column=0, sticky="nsew")
+        w.grid_columnconfigure(0, weight=1)
+        w.grid_rowconfigure(4, weight=1)
 
-        header = ctk.CTkFrame(root, fg_color="transparent")
-        header.grid(row=0, column=0, columnspan=2, sticky="ew", padx=18, pady=(16, 8))
-        header.grid_columnconfigure(0, weight=1)
+        self._top(w, row=0)          # source bar
+        self._cats(w, row=2)         # category list
+        self._opts(w, row=3)         # settings strip
+        self._log(w, row=4)          # activity log  (expandable)
+        self._bar(w, row=5)          # action bar
+        self._bot(w, row=6)          # status bar
+
+    # ── Top bar: source folder ──────────────────────────────────────────────
+
+    def _top(self, parent, row):
+        f = ctk.CTkFrame(parent, fg_color="transparent")
+        f.grid(row=row, column=0, sticky="ew", padx=30, pady=(14, 6))
+        f.grid_columnconfigure(1, weight=1)
+
+        ctk.CTkLabel(f, text="File Organizer", font=ctk.CTkFont(F, 20, "bold"),
+                      text_color=Clr.text).grid(row=0, column=0, padx=(0, 20))
+
+        ctk.CTkLabel(f, text="\U0001f4c1", font=ctk.CTkFont(size=14)).grid(row=0, column=1, padx=(0, 6))
+
+        self.fol_lbl = ctk.CTkLabel(
+            f, text="No folder selected", anchor="w",
+            font=ctk.CTkFont(F, 12), text_color=Clr.text2,
+        )
+        self.fol_lbl.grid(row=0, column=2, sticky="ew")
+
+        self.fol_btn = ctk.CTkButton(
+            f, text="\U0001f4c2 Browse", command=self.pick,
+            height=32, corner_radius=6,
+            fg_color=Clr.blue, hover_color=_dim(Clr.blue),
+            text_color=Clr.bg, font=ctk.CTkFont(F, 12, "bold"),
+        )
+        self.fol_btn.grid(row=0, column=3, padx=(12, 0))
+
+    # ── Category list ───────────────────────────────────────────────────────
+
+    def _cats(self, parent, row):
+        f = ctk.CTkFrame(parent, fg_color=Clr.surface, corner_radius=10,
+                          border_width=1, border_color=Clr.border)
+        f.grid(row=row, column=0, sticky="nsew", padx=30, pady=(10, 10))
+        f.grid_columnconfigure(0, weight=1)
+        f.grid_rowconfigure(1, weight=1)
+
+        hdr = ctk.CTkFrame(f, fg_color="transparent")
+        hdr.grid(row=0, column=0, sticky="ew", padx=16, pady=(10, 2))
+        hdr.grid_columnconfigure(0, weight=1)
+
+        ctk.CTkLabel(hdr, text="Categories", font=ctk.CTkFont(F, 14, "bold"),
+                      text_color=Clr.blue).grid(row=0, column=0, sticky="w")
+
+        scroll = ctk.CTkScrollableFrame(
+            f, fg_color="transparent", corner_radius=0,
+            scrollbar_button_color=Clr.surface2,
+            scrollbar_button_hover_color=Clr.text3,
+        )
+        scroll.grid(row=1, column=0, sticky="nsew", padx=6, pady=(0, 2))
+        scroll.grid_columnconfigure(0, weight=1)
+
+        icons = ["\U0001f5bc", "\U0001f4c4", "\U0001f3b5", "\U0001f3ac", "\U0001f4e6", "\u2699", "\U0001f4c2"]
+        for i, (cat, exts) in enumerate(DEFAULT_CATEGORIES.items()):
+            self._cat_row(scroll, i, icons[i], cat, exts)
+
+        hint = ctk.CTkFrame(f, fg_color="transparent")
+        hint.grid(row=2, column=0, sticky="ew", padx=16, pady=(0, 8))
+        hint.grid_columnconfigure(0, weight=1)
 
         ctk.CTkLabel(
-            header,
-            text="File Organizer",
-            font=ctk.CTkFont(family="Segoe UI", size=34, weight="bold"),
-            text_color="#43E8D8",
+            hint,
+            text="\u2139 Each category sends files to a folder. Click \u2026 to pick a custom folder, \u2716 to reset to default.",
+            font=ctk.CTkFont(F, 10), text_color=Clr.text3, justify="left", wraplength=600,
         ).grid(row=0, column=0, sticky="w")
 
-        ctk.CTkLabel(
-            header,
-            text=f"v{APP_VERSION} - preview, undo, exclusions and editable categories",
-            font=ctk.CTkFont(size=13),
-            text_color="#B7C4C9",
-        ).grid(row=1, column=0, sticky="w", pady=(4, 0))
+    def _cat_row(self, parent, i, icon, cat, exts):
+        # ┌──────────────────────────────────────────────────────────────────┐
+        # │ 🖼  Images   [.png, .jpg, .jpeg...        ]  📁 Default    […] ✕│
+        # └──────────────────────────────────────────────────────────────────┘
 
-        folder_card = ctk.CTkFrame(root, corner_radius=16, fg_color="#11181C")
-        folder_card.grid(row=1, column=0, columnspan=2, sticky="ew", padx=18, pady=10)
-        folder_card.grid_columnconfigure(0, weight=1)
+        row = ctk.CTkFrame(parent, fg_color=Clr.surface2, corner_radius=8)
+        row.grid(row=i, column=0, sticky="ew", pady=5)
+        row.grid_columnconfigure(2, weight=2)
+        row.grid_columnconfigure(4, weight=1)
 
-        self.folder_label = ctk.CTkLabel(
-            folder_card,
-            text="No folder selected",
-            font=ctk.CTkFont(size=13),
-            text_color="#DCE9ED",
-            anchor="w",
+        ctk.CTkLabel(row, text=icon, font=ctk.CTkFont(size=15)).grid(
+            row=0, column=0, padx=(10, 4))
+
+        ctk.CTkLabel(row, text=cat, font=ctk.CTkFont(F, 12, "bold"),
+                      text_color=Clr.text, width=80, anchor="w").grid(
+            row=0, column=1, padx=(0, 6))
+
+        ext = ctk.CTkEntry(
+            row, fg_color=Clr.input_bg, border_color=Clr.border,
+            border_width=1, corner_radius=6, height=30,
+            text_color=Clr.text2, font=ctk.CTkFont(size=11),
         )
-        self.folder_label.grid(row=0, column=0, sticky="ew", padx=14, pady=12)
+        ext.insert(0, exts)
+        ext.grid(row=0, column=2, sticky="ew", padx=(0, 6))
+        self.ext_entries[cat] = ext
 
-        controls = ctk.CTkFrame(root, fg_color="transparent")
-        controls.grid(row=2, column=0, columnspan=2, sticky="ew", padx=18, pady=(2, 12))
-        controls.grid_columnconfigure((0, 1, 2, 3), weight=1)
+        dst = ctk.CTkEntry(
+            row, fg_color=Clr.input_bg, border_color=Clr.border,
+            border_width=1, corner_radius=6, height=30,
+            text_color=Clr.text3, font=ctk.CTkFont(size=11),
+        )
+        dst.insert(0, "Default")
+        dst.configure(state="readonly")
+        dst.grid(row=0, column=3, columnspan=1, sticky="ew", padx=(0, 4))
+        self.dst_entries[cat] = dst
 
-        self.preview_button = self._button(controls, "Select Folder", self.select_folder, "#43E8D8")
-        self.preview_button.grid(row=0, column=0, sticky="ew", padx=(0, 8))
+        ctk.CTkButton(
+            row, text="\u2026", width=30, height=28, corner_radius=5,
+            fg_color=Clr.surface, hover_color=Clr.blue,
+            text_color=Clr.text2, font=ctk.CTkFont(size=14, weight="bold"),
+            command=lambda c=cat: self._pick(c),
+        ).grid(row=0, column=5, padx=(0, 2))
 
-        self.scan_button = self._button(controls, "Preview", self.preview_files, "#F7C948")
-        self.scan_button.grid(row=0, column=1, sticky="ew", padx=8)
+        ctk.CTkButton(
+            row, text="\u2716", width=26, height=28, corner_radius=5,
+            fg_color=Clr.surface, hover_color=Clr.rose,
+            text_color=Clr.text3, font=ctk.CTkFont(size=9),
+            command=lambda c=cat: self._clr(c),
+        ).grid(row=0, column=6, padx=(0, 8))
 
-        self.organize_button = self._button(controls, "Organize", self.start_organizing, "#52D273")
-        self.organize_button.grid(row=0, column=2, sticky="ew", padx=8)
+    # ── Settings strip ──────────────────────────────────────────────────────
 
-        self.undo_button = self._button(controls, "Undo Last Move", self.undo_last_move, "#FF8A65")
-        self.undo_button.grid(row=0, column=3, sticky="ew", padx=(8, 0))
+    def _opts(self, parent, row):
+        f = ctk.CTkFrame(parent, fg_color=Clr.surface2, corner_radius=8,
+                          border_width=1, border_color=Clr.border)
+        f.grid(row=row, column=0, sticky="ew", padx=30, pady=4)
+        f.grid_columnconfigure((1, 3), weight=1)
 
-        options = ctk.CTkFrame(root, corner_radius=16, fg_color="#11181C")
-        options.grid(row=3, column=0, sticky="nsew", padx=(18, 9), pady=(0, 12))
-        options.grid_columnconfigure(0, weight=1)
-        options.grid_columnconfigure(1, weight=1)
+        ctk.CTkLabel(f, text="\u2699", font=ctk.CTkFont(size=12)).grid(
+            row=0, column=0, padx=(10, 4), pady=8)
 
-        ctk.CTkLabel(
-            options,
-            text="Editable categories",
-            font=ctk.CTkFont(size=16, weight="bold"),
-            text_color="#43E8D8",
-        ).grid(row=0, column=0, sticky="w", padx=14, pady=(14, 8))
+        self.ig_ext = ctk.CTkEntry(
+            f, fg_color=Clr.input_bg, border_color=Clr.border,
+            border_width=1, corner_radius=5, height=28,
+            text_color=Clr.text2, font=ctk.CTkFont(size=11),
+        )
+        self.ig_ext.insert(0, ".tmp, .log")
+        self.ig_ext.grid(row=0, column=1, sticky="ew", padx=(0, 12))
 
-        for index, (category, extensions) in enumerate(DEFAULT_CATEGORIES.items()):
-            column = index % 2
-            row = (index // 2) * 2 + 1
-            ctk.CTkLabel(options, text=category, text_color="#DCE9ED").grid(
-                row=row, column=column, sticky="w", padx=14, pady=(6, 0)
-            )
-            entry = ctk.CTkEntry(options)
-            entry.insert(0, extensions)
-            entry.grid(row=row + 1, column=column, sticky="ew", padx=14, pady=(2, 4))
-            self.category_entries[category] = entry
+        self.ig_nam = ctk.CTkEntry(
+            f, fg_color=Clr.input_bg, border_color=Clr.border,
+            border_width=1, corner_radius=5, height=28,
+            text_color=Clr.text2, font=ctk.CTkFont(size=11),
+        )
+        self.ig_nam.insert(0, "desktop.ini, thumbs.db")
+        self.ig_nam.grid(row=0, column=2, sticky="ew", padx=(0, 12))
 
-        exclusions = ctk.CTkFrame(root, corner_radius=16, fg_color="#11181C")
-        exclusions.grid(row=3, column=1, sticky="nsew", padx=(9, 18), pady=(0, 12))
-        exclusions.grid_columnconfigure(0, weight=1)
-
-        ctk.CTkLabel(
-            exclusions,
-            text="Exclusions and safety",
-            font=ctk.CTkFont(size=16, weight="bold"),
-            text_color="#43E8D8",
-        ).grid(row=0, column=0, sticky="w", padx=14, pady=(14, 8))
-
-        ctk.CTkLabel(
-            exclusions,
-            text="Ignore extensions (comma-separated)",
-            text_color="#DCE9ED",
-        ).grid(row=1, column=0, sticky="w", padx=14, pady=(6, 0))
-        self.ignore_extensions_entry = ctk.CTkEntry(exclusions)
-        self.ignore_extensions_entry.insert(0, ".tmp, .log")
-        self.ignore_extensions_entry.grid(row=2, column=0, sticky="ew", padx=14, pady=(2, 10))
-
-        ctk.CTkLabel(
-            exclusions,
-            text="Ignore filenames (comma-separated)",
-            text_color="#DCE9ED",
-        ).grid(row=3, column=0, sticky="w", padx=14, pady=(6, 0))
-        self.ignore_names_entry = ctk.CTkEntry(exclusions)
-        self.ignore_names_entry.insert(0, "desktop.ini, thumbs.db")
-        self.ignore_names_entry.grid(row=4, column=0, sticky="ew", padx=14, pady=(2, 10))
-
-        self.skip_hidden_var = ctk.BooleanVar(value=True)
+        self.hid_var = ctk.BooleanVar(value=True)
         ctk.CTkCheckBox(
-            exclusions,
-            text="Skip hidden files",
-            variable=self.skip_hidden_var,
-            text_color="#DCE9ED",
-        ).grid(row=5, column=0, sticky="w", padx=14, pady=8)
+            f, text="Hidden", variable=self.hid_var,
+            text_color=Clr.text2, font=ctk.CTkFont(F, 11),
+            fg_color=Clr.blue, corner_radius=4, checkmark_color=Clr.bg,
+        ).grid(row=0, column=3, padx=(0, 10))
 
-        self.status_label = ctk.CTkLabel(
-            exclusions,
-            text="",
-            text_color="#B7C4C9",
-            wraplength=360,
-            justify="left",
-        )
-        self.status_label.grid(row=6, column=0, sticky="ew", padx=14, pady=(18, 14))
+    # ── Activity log ────────────────────────────────────────────────────────
 
-        output = ctk.CTkFrame(root, corner_radius=16, fg_color="#0B1114")
-        output.grid(row=4, column=0, columnspan=2, sticky="nsew", padx=18, pady=(0, 18))
-        output.grid_columnconfigure(0, weight=1)
-        output.grid_rowconfigure(1, weight=1)
-        output.configure(height=260)
-        output.grid_propagate(False)
+    def _log(self, parent, row):
+        f = ctk.CTkFrame(parent, fg_color=Clr.surface, corner_radius=8,
+                          border_width=1, border_color=Clr.border)
+        f.grid(row=row, column=0, sticky="nsew", padx=30, pady=(2, 4))
+        f.grid_columnconfigure(0, weight=1)
+        f.grid_rowconfigure(1, weight=1)
 
         ctk.CTkLabel(
-            output,
-            text="Preview and activity log",
-            font=ctk.CTkFont(size=16, weight="bold"),
-            text_color="#43E8D8",
-        ).grid(row=0, column=0, sticky="w", padx=14, pady=(12, 6))
+            f, text="\U0001f4cb Log",
+            font=ctk.CTkFont(F, 12, "bold"), text_color=Clr.cyan,
+        ).grid(row=0, column=0, sticky="w", padx=14, pady=(6, 2))
 
-        self.log_box = ctk.CTkTextbox(output, height=220, corner_radius=12, fg_color="#071013")
-        self.log_box.grid(row=1, column=0, sticky="nsew", padx=14, pady=(0, 14))
-        self.log_box.insert("end", "Choose a folder, then click Preview.\n")
-        self.log_box.configure(state="disabled")
-
-    def _button(self, parent, text, command, color):
-        return ctk.CTkButton(
-            parent,
-            text=text,
-            command=command,
-            height=46,
-            corner_radius=12,
-            fg_color=color,
-            hover_color=self._darken(color),
-            text_color="#071013",
-            font=ctk.CTkFont(size=13, weight="bold"),
+        self.log = ctk.CTkTextbox(
+            f, corner_radius=6, height=80,
+            fg_color=Clr.bg, border_color=Clr.border, border_width=1,
+            text_color=Clr.text2, font=ctk.CTkFont(FM, 11),
         )
+        self.log.grid(row=1, column=0, sticky="nsew", padx=12, pady=(2, 10))
+        self.log.insert("end", "Select a folder and press Preview.\n")
+        self.log.configure(state="disabled")
 
-    @staticmethod
-    def _darken(hex_color: str):
-        value = hex_color.lstrip("#")
-        red, green, blue = (int(value[i : i + 2], 16) for i in (0, 2, 4))
-        return f"#{int(red * 0.78):02x}{int(green * 0.78):02x}{int(blue * 0.78):02x}"
+    # ── Action bar ──────────────────────────────────────────────────────────
 
-    def select_folder(self):
-        selected = filedialog.askdirectory(title="Select a folder to organize")
-        if not selected:
+    def _bar(self, parent, row):
+        f = ctk.CTkFrame(parent, fg_color="transparent")
+        f.grid(row=row, column=0, sticky="ew", padx=30, pady=(4, 8))
+
+        self._btns = []
+        for txt, cmd, clr in [
+            ("\U0001f50d  Preview", self.preview, Clr.cyan),
+            ("\U0001f680  Organize", self.organize, Clr.green),
+            ("\u21a9  Undo", self.undo, Clr.orange),
+            ("\U0001f504  Refresh", self.preview, Clr.purple),
+        ]:
+            b = ctk.CTkButton(
+                f, text=txt, command=cmd,
+                height=38, corner_radius=8,
+                fg_color=clr, hover_color=_dim(clr),
+                text_color=Clr.bg, font=ctk.CTkFont(F, 12, "bold"),
+            )
+            b.pack(side="left", padx=4, fill="x", expand=True)
+            self._btns.append(b)
+
+        self.st_lbl = ctk.CTkLabel(
+            f, text="", font=ctk.CTkFont(F, 11), text_color=Clr.text3,
+        )
+        self.st_lbl.pack(side="right", padx=(12, 0))
+
+    # ── Status bar ──────────────────────────────────────────────────────────
+
+    def _bot(self, parent, row):
+        b = ctk.CTkFrame(parent, fg_color=Clr.surface2, height=28, corner_radius=0)
+        b.grid(row=row, column=0, sticky="ew")
+        b.grid_columnconfigure(1, weight=1)
+        b.grid_propagate(False)
+
+        if self._logo_img:
+            ctk.CTkLabel(b, text="", image=self._logo_img,
+            ).grid(row=0, column=0, padx=(12, 4))
+
+        ctk.CTkLabel(b, text="File Organizer",
+                      font=ctk.CTkFont(F, 10), text_color=Clr.text3,
+        ).grid(row=0, column=1, sticky="w")
+
+        ctk.CTkLabel(b, text="120 FPS",
+                      font=ctk.CTkFont(FM, 9), text_color=Clr.text3,
+        ).grid(row=0, column=2, padx=(0, 4))
+
+        ctk.CTkLabel(b, text=f"v{APP_VERSION}",
+                      font=ctk.CTkFont(F, 10), text_color=Clr.text3,
+        ).grid(row=0, column=3, sticky="e", padx=(0, 16))
+
+    # ── Destination helpers ─────────────────────────────────────────────────
+
+    def _pick(self, cat):
+        d = filedialog.askdirectory(title=f"Destination: {cat}")
+        if not d:
             return
+        p = Path(d)
+        self.dst_paths[cat] = p
+        e = self.dst_entries[cat]
+        e.configure(state="normal")
+        e.delete(0, "end")
+        e.insert(0, str(p))
+        e.configure(state="readonly")
 
-        self.selected_folder = Path(selected)
-        self.preview_plan = []
-        self.folder_label.configure(text=str(self.selected_folder))
-        self._write_log("Folder selected. Click Preview to inspect planned moves.")
-        self._set_status("Folder ready.")
+    def _clr(self, cat):
+        self.dst_paths[cat] = None
+        e = self.dst_entries[cat]
+        e.configure(state="normal")
+        e.delete(0, "end")
+        e.insert(0, "Default")
+        e.configure(state="readonly")
 
-    def preview_files(self):
-        if not self._ensure_folder():
+    # ── Actions ─────────────────────────────────────────────────────────────
+
+    def pick(self):
+        d = filedialog.askdirectory(title="Select folder to organize")
+        if not d:
             return
+        self.sel = Path(d)
+        self.plan = []
+        self.fol_lbl.configure(text=str(self.sel))
+        self._wr("Folder selected. Press Preview.")
+        self._st("Ready")
 
+    def preview(self):
+        if not self._ok():
+            return
         try:
-            self.preview_plan = self._build_plan()
-        except OSError as exc:
-            messagebox.showerror("Preview failed", str(exc))
+            self.plan = self._plan()
+        except OSError as e:
+            messagebox.showerror("Error", str(e))
             return
-
-        if not self.preview_plan:
-            self._write_log("No movable files found with the current settings.")
-            self._set_status("Nothing to organize.")
+        if not self.plan:
+            self._wr("Nothing to move.")
+            self._st("Empty")
             return
+        s = summarize_plan(self.plan)
+        lines = ["Preview:", "", s, "", "Moves:"]
+        for m in self.plan[:250]:
+            lines.append(f"  {m.source.name} \u2192 {m.category}/{m.destination.name}")
+        if len(self.plan) > 250:
+            lines.append(f"  ... +{len(self.plan)-250} more")
+        self._wr("\n".join(lines))
+        self._st(f"{len(self.plan)} files ready")
 
-        summary = summarize_plan(self.preview_plan)
-        lines = ["Preview:", "", summary, "", "Planned moves:"]
-        for move in self.preview_plan[:250]:
-            lines.append(f"- {move.source.name} -> {move.category}\\{move.destination.name}")
-        if len(self.preview_plan) > 250:
-            lines.append(f"...and {len(self.preview_plan) - 250} more files.")
-
-        self._write_log("\n".join(lines))
-        self._set_status(f"{len(self.preview_plan)} files ready to organize.")
-
-    def start_organizing(self):
-        if not self._ensure_folder():
+    def organize(self):
+        if not self._ok():
             return
-
-        if not self.preview_plan:
-            self.preview_files()
-
-        if not self.preview_plan:
+        if not self.plan:
+            self.preview()
+        if not self.plan:
             return
-
-        answer = messagebox.askyesno(
-            "Confirm organization",
-            f"Move {len(self.preview_plan)} files according to the preview?",
-        )
-        if not answer:
+        if not messagebox.askyesno("Confirm", f"Move {len(self.plan)} files?"):
             return
+        self._toggle(False)
+        self._st("Organizing\u2026")
+        threading.Thread(target=self._run, args=(list(self.plan),), daemon=True).start()
 
-        self._toggle_actions(False)
-        self._set_status("Organizing files...")
-        thread = threading.Thread(target=self._organize_files, args=(list(self.preview_plan),), daemon=True)
-        thread.start()
-
-    def undo_last_move(self):
-        if not self.last_moves:
-            messagebox.showinfo("Nothing to undo", "There is no previous organization to undo.")
+    def undo(self):
+        if not self.last:
+            messagebox.showinfo("Undo", "Nothing to undo.")
             return
-
-        answer = messagebox.askyesno(
-            "Undo last move",
-            f"Move {len(self.last_moves)} files back to their original locations?",
-        )
-        if not answer:
+        if not messagebox.askyesno("Undo", f"Restore {len(self.last)} files?"):
             return
+        self._toggle(False)
+        self._st("Undoing\u2026")
+        threading.Thread(target=self._rev, daemon=True).start()
 
-        self._toggle_actions(False)
-        self._set_status("Undoing last organization...")
-        thread = threading.Thread(target=self._undo_moves, daemon=True)
-        thread.start()
+    def _plan(self) -> list[PlannedMove]:
+        assert self.sel is not None
+        m = {c: e.get() for c, e in self.ext_entries.items()}
+        em = build_extension_map(m)
+        ie = parse_extensions(self.ig_ext.get())
+        inm = {s.strip().lower() for s in self.ig_nam.get().split(",") if s.strip()}
+        cd = {c: p for c, p in self.dst_paths.items() if p is not None}
+        return build_plan(self.sel, em, ie, inm, self.hid_var.get(), cd or None)
 
-    def _build_plan(self) -> list[PlannedMove]:
-        assert self.selected_folder is not None
-
-        category_extensions = {category: entry.get() for category, entry in self.category_entries.items()}
-        extension_map = build_extension_map(category_extensions)
-        ignored_extensions = parse_extensions(self.ignore_extensions_entry.get())
-        ignored_names = {name.strip().lower() for name in self.ignore_names_entry.get().split(",") if name.strip()}
-
-        return build_plan(
-            selected_folder=self.selected_folder,
-            extension_map=extension_map,
-            ignored_extensions=ignored_extensions,
-            ignored_names=ignored_names,
-            skip_hidden=self.skip_hidden_var.get(),
-        )
-
-    def _organize_files(self, plan: list[PlannedMove]):
-        completed: list[tuple[Path, Path]] = []
-        errors: list[str] = []
-
-        for move in plan:
+    def _run(self, plan):
+        ok, err = [], []
+        folders = {m.destination.parent for m in plan}
+        for f in folders:
             try:
-                move.destination.parent.mkdir(exist_ok=True)
-                shutil.move(str(move.source), str(move.destination))
-                completed.append((move.source, move.destination))
-            except OSError as exc:
-                errors.append(f"{move.source.name}: {exc}")
-
-        self.after(0, self._finish_organizing, completed, errors)
-
-    def _finish_organizing(self, completed: list[tuple[Path, Path]], errors: list[str]):
-        self.last_moves = completed
-        self.preview_plan = []
-        self._toggle_actions(True)
-
-        moved_summary = Counter(destination.parent.name for _, destination in completed)
-        lines = [
-            "Organization complete.",
-            "",
-            f"Moved files: {len(completed)}",
-        ]
-        for category, count in sorted(moved_summary.items()):
-            lines.append(f"- {category}: {count}")
-        if errors:
-            lines.extend(["", "Errors:"])
-            lines.extend(f"- {error}" for error in errors)
-
-        self._write_log("\n".join(lines))
-        self._set_status("Organization complete. Undo is available.")
-        messagebox.showinfo("Organization complete", f"Moved {len(completed)} files.")
-
-    def _undo_moves(self):
-        undone = 0
-        errors: list[str] = []
-
-        for original, current in reversed(self.last_moves):
+                f.mkdir(parents=True, exist_ok=True)
+            except OSError as e:
+                err.append(f"Cannot create {f.name}: {e}")
+        if err:
+            self.after(0, self._done, ok, err)
+            return
+        for m in plan:
             try:
-                if not current.exists():
-                    errors.append(f"Missing moved file: {current.name}")
+                shutil.move(str(m.source), str(m.destination))
+                ok.append((m.source, m.destination))
+            except OSError as e:
+                err.append(f"{m.source.name}: {e}")
+        self.after(0, self._done, ok, err)
+
+    def _done(self, ok, err):
+        self.last = ok
+        self.plan = []
+        self._toggle(True)
+        c = Counter(d.parent.name for _, d in ok)
+        lines = [f"Moved {len(ok)} files."]
+        for cat, n in sorted(c.items()):
+            lines.append(f"  {cat}: {n}")
+        if err:
+            lines += ["", "Errors:"] + [f"  {e}" for e in err]
+        self._wr("\n".join(lines))
+        self._st("Complete")
+        messagebox.showinfo("Done", f"Moved {len(ok)} files.")
+
+    def _rev(self):
+        ok, err = 0, []
+        for src, dst in reversed(self.last):
+            try:
+                if not dst.exists():
+                    err.append(f"Missing: {dst.name}")
                     continue
-                restore_path = unique_destination(original, current)
-                restore_path.parent.mkdir(exist_ok=True)
-                shutil.move(str(current), str(restore_path))
-                undone += 1
-            except OSError as exc:
-                errors.append(f"{current.name}: {exc}")
+                r = unique_destination(src, dst)
+                r.parent.mkdir(exist_ok=True)
+                shutil.move(str(dst), str(r))
+                ok += 1
+            except OSError as e:
+                err.append(f"{dst.name}: {e}")
+        self.after(0, self._undone, ok, err)
 
-        self.after(0, self._finish_undo, undone, errors)
+    def _undone(self, ok, err):
+        if not err:
+            self.last = []
+        self._toggle(True)
+        lines = [f"Restored {ok} files."]
+        if err:
+            lines += ["Errors:"] + [f"  {e}" for e in err]
+        self._wr("\n".join(lines))
+        self._st("Undone" if not err else "Errors")
+        messagebox.showinfo("Undo", f"Restored {ok} files.")
 
-    def _finish_undo(self, undone: int, errors: list[str]):
-        if not errors:
-            self.last_moves = []
-        self._toggle_actions(True)
+    def _fps_loop(self):
+        self.update_idletasks()
+        self.after(8, self._fps_loop)
 
-        lines = ["Undo complete.", "", f"Restored files: {undone}"]
-        if errors:
-            lines.extend(["", "Errors:"])
-            lines.extend(f"- {error}" for error in errors)
+    def destroy(self):
+        super().destroy()
 
-        self._write_log("\n".join(lines))
-        self._set_status("Undo complete." if not errors else "Undo finished with errors.")
-        messagebox.showinfo("Undo complete", f"Restored {undone} files.")
-
-    def _ensure_folder(self) -> bool:
-        if self.selected_folder and self.selected_folder.exists():
+    def _ok(self) -> bool:
+        if self.sel and self.sel.exists():
             return True
-        messagebox.showerror("No folder selected", "Please select a folder first.")
+        messagebox.showerror("Error", "Select a folder first.")
         return False
 
-    def _write_log(self, text: str):
-        self.log_box.configure(state="normal")
-        self.log_box.delete("1.0", "end")
-        self.log_box.insert("end", text)
-        self.log_box.configure(state="disabled")
+    def _wr(self, t):
+        self.log.configure(state="normal")
+        self.log.delete("1.0", "end")
+        self.log.insert("end", t)
+        self.log.configure(state="disabled")
 
-    def _set_status(self, text: str):
-        self.status_label.configure(text=text)
+    def _st(self, t):
+        self.st_lbl.configure(text=t)
 
-    def _toggle_actions(self, enabled: bool):
-        state = "normal" if enabled else "disabled"
-        for button in (self.preview_button, self.scan_button, self.organize_button, self.undo_button):
-            button.configure(state=state)
+    def _toggle(self, en):
+        s = "normal" if en else "disabled"
+        for b in self._btns:
+            b.configure(state=s)
+        self.fol_btn.configure(state=s)

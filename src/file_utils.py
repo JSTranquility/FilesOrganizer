@@ -3,7 +3,7 @@ import unicodedata
 from collections import Counter
 from pathlib import Path
 
-from config import CATEGORY_FOLDER_ALIASES
+from config import CATEGORY_FOLDER_ALIASES, SUBFOLDER_EXTENSIONS
 from models import PlannedMove
 
 
@@ -13,6 +13,7 @@ def build_plan(
     ignored_extensions: set[str],
     ignored_names: set[str],
     skip_hidden: bool,
+    custom_destinations: dict[str, Path] | None = None,
 ) -> list[PlannedMove]:
     category_folders = category_folder_map(selected_folder)
     plan: list[PlannedMove] = []
@@ -28,7 +29,17 @@ def build_plan(
             continue
 
         category = extension_map.get(item.suffix.lower(), "Other")
-        destination_folder = category_folders.get(category, selected_folder / category)
+
+        if custom_destinations and category in custom_destinations:
+            destination_folder = custom_destinations[category]
+        else:
+            destination_folder = category_folders[category]
+
+        subfolder = SUBFOLDER_EXTENSIONS.get(item.suffix.lower())
+        if subfolder:
+            destination_folder = destination_folder / subfolder
+            category = subfolder
+
         destination = unique_destination(destination_folder / item.name, item)
         if destination.resolve() == item.resolve():
             continue
@@ -53,14 +64,17 @@ def category_folder_map(selected_folder: Path) -> dict[str, Path]:
         if path.is_dir()
     }
 
-    categories = [*CATEGORY_FOLDER_ALIASES]
     category_folders: dict[str, Path] = {}
-    for category in categories:
-        for alias in CATEGORY_FOLDER_ALIASES.get(category, (category,)):
+    for category, aliases in CATEGORY_FOLDER_ALIASES.items():
+        found = False
+        for alias in aliases:
             folder = existing_folders.get(normalize_folder_name(alias))
             if folder is not None:
                 category_folders[category] = folder
+                found = True
                 break
+        if not found:
+            category_folders[category] = selected_folder / category
     return category_folders
 
 

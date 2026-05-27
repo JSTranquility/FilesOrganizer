@@ -1,5 +1,5 @@
 param(
-    [string]$Version = "1.1.0",
+    [string]$Version = "1.2.0",
     [string]$PythonPath = ""
 )
 
@@ -26,8 +26,9 @@ try {
         --onedir `
         --windowed `
         --noupx `
-        --icon="assets\icon.ico" `
-        --add-data="assets\icon.ico;assets" `
+        --icon="assets\app_logo.ico" `
+        --add-data="assets\app_logo.ico;assets" `
+        --add-data="assets\logo.png;assets" `
         --name="File Organizer" `
         "src\main.py"
 

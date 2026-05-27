@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 
 
-APP_VERSION = "1.1.0"
+APP_VERSION = "1.2.2"
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = BASE_DIR.parent
 
@@ -11,7 +11,8 @@ if getattr(sys, "frozen", False):
 else:
     RESOURCE_ROOT = PROJECT_ROOT
 
-ICON_PATH = RESOURCE_ROOT / "assets" / "icon.ico"
+APP_ICO = RESOURCE_ROOT / "assets" / "app_logo.ico"
+LOGO_PATH = RESOURCE_ROOT / "assets" / "logo.png"
 
 DEFAULT_CATEGORIES = {
     "Images": ".png, .jpg, .jpeg, .gif, .webp, .bmp, .svg",
@@ -20,6 +21,18 @@ DEFAULT_CATEGORIES = {
     "Video": ".mp4, .mov, .avi, .mkv, .webm",
     "Archives": ".zip, .rar, .7z, .tar, .gz",
     "Executables": ".exe, .msi, .bat, .cmd",
+    "Other": "",
+}
+
+SUBFOLDER_EXTENSIONS = {
+    ".pdf": "PDF",
+    ".doc": "Word",
+    ".docx": "Word",
+    ".xls": "Excel",
+    ".xlsx": "Excel",
+    ".ppt": "PowerPoint",
+    ".pptx": "PowerPoint",
+    ".txt": "Text",
 }
 
 CATEGORY_FOLDER_ALIASES = {
